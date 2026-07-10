@@ -1,0 +1,285 @@
+function [bestRates, energyHistory] = runSimulatedAnnealing(invData, targets, params, faultResults)
+% RUNSIMULATEDANNEALING - Classic Parallel Ensemble with Seismotectonic Delta Calibration
+% Solves for rupture rates by minimizing total energy using a static deltaScale 
+% anchored to the regional minimum plausible geological slip rate.
+
+    % --- 1. HYPERPARAMETERS & SEED SETUP ---
+    numIter = params.numIter;
+    numRuns = params.runSA;
+    T_init  = 10.0;
+    T_final = 0.001;
+    cooling_rate = (T_final / T_init)^(1 / numIter); 
+    
+    numRup = invData.numRuptures;
+    numFaults = length(faultResults);
+    
+    % --- SEISMOTECTONIC STATIC DELTASCALE CALIBRATION ---
+    % Find positive slip rates (exclude unconstrained or zero-rate sections)
+    validSR = targets.maxSR(targets.maxSR > 0);
+    if ~isempty(validSR)
+        % Reference lower-bound slip rate (10th percentile to avoid unrepresentative outliers)
+        referenceSR = prctile(validSR, 10); 
+        % Convert to standard return period rate assuming a ~1m typical event slip displacement
+        % Rate = 1 / ReturnPeriod = SlipRate / 1m
+        staticDeltaScale = referenceSR; 
+    else
+        staticDeltaScale = 1e-4; % Safe fallback for regional crustal faults
+    end
+    
+    % Filtering valid ruptures (exclude segmentation violations)
+    validRupIdx = setdiff(1:numRup, invData.badRupIdx);
+    numValid = numel(validRupIdx);
+    
+    % =========================================================================
+    % ⚠️ INTELLIGENT WARNING: INITIAL ITERATION SUFFICIENCY CHECK
+    % =========================================================================
+    % 1. Calculate the average number of samplings each valid rupture receives
+    samplingFactorK = numIter / numValid;
+    
+    % Engineering critical thresholds
+    minRecommendedK = params.minRecommendedK;
+    
+    if samplingFactorK < minRecommendedK
+        warning('⚠️ INSUFFICIENT ITERATIONS DETECTED relative to the scale of the problem!');
+        fprintf('   ---------------------------------------------------------------------------\n');
+        fprintf('   👉 You have set %d iterations for %d valid ruptures.\n', numIter, numValid);
+        fprintf('   👉 Each rupture will be sampled an average of %.1f times.\n', samplingFactorK);
+        fprintf('   🔔 SUGGESTION: Increase the number of iterations to at least %d for this configuration,\n', numValid * 1000);
+        fprintf('      or proceed knowing that the results might be underfitted.\n');
+        fprintf('   ---------------------------------------------------------------------------\n\n');
+        
+        % 3-second courtesy pause to give the user time to read the warning before parfor starts
+        pause(3); 
+    end
+    % =========================================================================
+    % Pre-allocate ensemble variables for parfor
+    ensembleRates = zeros(numRup, numRuns); 
+    energyHistory = zeros(numIter, numRuns); 
+    faultSlipEnsemble = zeros(numFaults, numRuns);
+    
+    fprintf('\n🚀 Starting Parallel SA Ensemble (%d Runs) with perturbation of: %.2e...\n', numRuns, staticDeltaScale);
+
+    % --- 2. PARALLEL ENSEMBLE LOOP ---
+    parfor n = 1:numRuns
+        fprintf('▶️ Worker: starting Run %d...\n', n);
+        
+        % Reproducibility anchor per worker
+        if isfield(params, 'seed')
+            rng(params.seed + n);
+        end
+        
+        % Initialization
+        localRates = repmat(1e-8, invData.numRuptures, 1);%zeros(numRup, 1);
+        [currentEnergy, ~] = calculateEnergy(localRates, invData, targets, params);
+        
+        bestRatesInRun = localRates;
+        bestEnergyInRun = currentEnergy;
+        T = T_init;
+        
+        % --- Main Optimization Loop ---
+        for i = 1:numIter
+            % 1. Proposal
+            idx = validRupIdx(randi(numValid));
+            oldRate = localRates(idx);
+            
+            % 2. Perturbation: Static physical step size
+            delta = (rand() - 0.5) * staticDeltaScale;
+            newRate = max(0, oldRate + delta); 
+            
+            % 3. Energy Calculation
+            tempRates = localRates;
+            tempRates(idx) = newRate;
+            [newEnergy, ~] = calculateEnergy(tempRates, invData, targets, params);
+            
+            % 4. Metropolis Acceptance Criterion
+            deltaE = newEnergy - currentEnergy;
+            if deltaE < 0 || rand() < exp(-deltaE / T)
+                localRates(idx) = newRate;
+                currentEnergy = newEnergy;
+                
+                if currentEnergy < bestEnergyInRun
+                    bestEnergyInRun = currentEnergy;
+                    bestRatesInRun = localRates;
+                end
+            end
+            
+            % 5. Cooling Schedule
+            T = T * cooling_rate;
+            energyHistory(i, n) = currentEnergy; 
+        end
+        
+        ensembleRates(:, n) = bestRatesInRun; 
+        
+        % --- BRIDGE: Final Fault-Level Slip Rate Calculation ---
+        currentSR_sub = (invData.Gsr' * (bestRatesInRun .* invData.Dr));
+        localFaultSlip = zeros(numFaults, 1);
+        for fIdx = 1:numFaults
+            subIdx = faultResults(fIdx).GlobalSubIndices;
+            if ~isempty(subIdx)
+                localFaultSlip(fIdx) = mean(currentSR_sub(subIdx));
+            end
+        end
+        faultSlipEnsemble(:, n) = localFaultSlip; 
+        
+        fprintf('✅ Worker: Run %d finished. Final Energy: %.2e\n', n, bestEnergyInRun);
+    end
+    
+    % --- 3. EPISTEMIC ENSEMBLE ANALYSIS ---
+    [~, absoluteBestRunIdx] = min(energyHistory(end, :));
+    
+    bestRates = struct();
+    bestRates.mean       = mean(ensembleRates, 2);
+    bestRates.p5         = prctile(ensembleRates, 5, 2);
+    bestRates.p16        = prctile(ensembleRates, 16, 2);
+    bestRates.p50        = prctile(ensembleRates, 50, 2);
+    bestRates.p84        = prctile(ensembleRates, 84, 2);
+    bestRates.p95        = prctile(ensembleRates, 95, 2);
+    bestRates.bestOfBest = ensembleRates(:, absoluteBestRunIdx);
+    
+    if isfield(params, 'seed')
+        bestRates.runSeeds = params.seed + (1:numRuns)';
+        bestRates.bestOfBestSeed = params.seed + absoluteBestRunIdx;
+    end
+    
+    % --- 4. STABILITY REPORT ---
+    fprintf('\n--- Final Stability Report (Ensemble Analysis) ---\n');
+    mean_rup = bestRates.mean;
+    active_rup = mean_rup > 1e-10;
+    if any(active_rup)
+        std_rup = std(ensembleRates(active_rup, :), 0, 2);
+        cv_rup = mean(std_rup ./ mean_rup(active_rup)) * 100;
+        fprintf('📊 Rupture-level CV: %.2f%%\n', cv_rup);
+    end
+    
+    mean_fault = mean(faultSlipEnsemble, 2);
+    active_fault = mean_fault > 1e-6;
+    if any(active_fault)
+        std_fault = std(faultSlipEnsemble(active_fault, :), 0, 2);
+        cv_fault = mean(std_fault ./ mean_fault(active_fault)) * 100;
+        fprintf('⭐ Fault-level Slip Rate CV: %.2f%%\n', cv_fault);
+    end
+    fprintf('🏆 Global Minimum Solution Found in Run #%d.\n', absoluteBestRunIdx);
+end% function [bestRates, energyHistory] = runSimulatedAnnealing(invData, targets, params, faultResults)
+% % RUNSIMULATEDANNEALING - Parallel Ensemble version with advanced constraints.
+% % This function solves for rupture rates by minimizing total energy 
+% % (Slip Rate Box-Constraints, MFD, Paleo, Segmentation, and L2).
+% 
+%     % --- 1. SA Hyperparameters ---
+%     numIter = params.numIter;
+%     numRuns = params.runSA;
+%     T_init  = 10.0;
+%     T_final = 0.001;
+%     cooling_rate = (T_final / T_init)^(1 / numIter); 
+% 
+%     numRup = invData.numRuptures;
+%     numFaults = length(faultResults);
+% 
+%     % Filtering valid ruptures: exclude those that violate segmentation rules.
+%     % This speeds up convergence by not sampling "forbidden" states.
+%     validRupIdx = setdiff(1:numRup, invData.badRupIdx);
+%     numValid = numel(validRupIdx);
+% 
+%     % Pre-allocate ensemble variables for parfor (sliced variables)
+%     ensembleRates = zeros(numRup, numRuns); 
+%     energyHistory = zeros(numIter, numRuns); 
+%     faultSlipEnsemble = zeros(numFaults, numRuns);
+% 
+%     fprintf('\n🚀 Starting Parallel SA Ensemble with %d Workers...\n', numRuns);
+% 
+%     % --- 2. PARALLEL ENSEMBLE LOOP ---
+%     parfor n = 1:numRuns
+%         fprintf('▶️ Worker: starting Run %d...\n', n);
+% 
+%         % Initialization: start from a "zero-rate" solution
+%         localRates = zeros(numRup, 1);
+%         [currentEnergy, ~] = calculateEnergy(localRates, invData, targets, params);
+% 
+%         bestRatesInRun = localRates;
+%         bestEnergyInRun = currentEnergy;
+%         T = T_init;
+% 
+%         % --- Main Optimization Loop ---
+%         for i = 1:numIter
+%             % 1. Proposal: Randomly pick an index from VALID ruptures only
+%             idx = validRupIdx(randi(numValid));
+% 
+%             oldRate = localRates(idx);
+% 
+%             % 2. Perturbation: Add/Subtract a small delta
+%             % params.deltaScale controls the step size (e.g., 1e-4)
+%             delta = (rand() - 0.5) * params.deltaScale;
+%             newRate = max(0, oldRate + delta); % Non-negativity constraint
+% 
+%             % 3. Energy Calculation
+%             % Efficiently update only the modified rupture rate
+%             tempRates = localRates;
+%             tempRates(idx) = newRate;
+%             [newEnergy, ~] = calculateEnergy(tempRates, invData, targets, params);
+% 
+%             % 4. Metropolis Acceptance Criterion
+%             deltaE = newEnergy - currentEnergy;
+% 
+%             if deltaE < 0 || rand() < exp(-deltaE / T)
+%                 % Accept the new state
+%                 localRates(idx) = newRate;
+%                 currentEnergy = newEnergy;
+% 
+%                 % Update best solution for the current run
+%                 if currentEnergy < bestEnergyInRun
+%                     bestEnergyInRun = currentEnergy;
+%                     bestRatesInRun = localRates;
+%                 end
+%             end
+% 
+%             % 5. Cooling Schedule
+%             T = T * cooling_rate;
+%             energyHistory(i, n) = currentEnergy; 
+%         end
+% 
+%         % Store the best results found in this run
+%         ensembleRates(:, n) = bestRatesInRun; 
+% 
+%         % --- BRIDGE: Final Fault-Level Slip Rate Calculation ---
+%         % Convert optimized rupture rates to mean slip rate per fault section
+%         % currentSR_sub = [NumSubsections x 1]
+%         currentSR_sub = (invData.Gsr' * (bestRatesInRun .* invData.Dr));
+% 
+%         localFaultSlip = zeros(numFaults, 1);
+%         for fIdx = 1:numFaults
+%             % Average the slip rate across subsections belonging to the fault
+%             subIdx = faultResults(fIdx).GlobalSubIndices;
+%             if ~isempty(subIdx)
+%                 localFaultSlip(fIdx) = mean(currentSR_sub(subIdx));
+%             end
+%         end
+%         faultSlipEnsemble(:, n) = localFaultSlip; 
+% 
+%         fprintf('✅ Worker: Run %d finished. Final Energy: %.2e\n', n, bestEnergyInRun);
+%     end
+% 
+%     % --- 3. STABILITY AND ENSEMBLE ANALYSIS ---
+%     fprintf('\n--- Final Stability Report (Ensemble Analysis) ---\n');
+% 
+%     % Rupture-level Coefficient of Variation (CV) for active ruptures
+%     mean_rup = mean(ensembleRates, 2);
+%     active_rup = mean_rup > 1e-10;
+%     if any(active_rup)
+%         std_rup = std(ensembleRates(active_rup, :), 0, 2);
+%         cv_rup = mean(std_rup ./ mean_rup(active_rup)) * 100;
+%         fprintf('📊 Rupture-level CV: %.2f%%\n', cv_rup);
+%     end
+% 
+%     % Fault-level CV (crucial for hazard stability)
+%     mean_fault = mean(faultSlipEnsemble, 2);
+%     active_fault = mean_fault > 1e-6;
+%     if any(active_fault)
+%         std_fault = std(faultSlipEnsemble(active_fault, :), 0, 2);
+%         cv_fault = mean(std_fault ./ mean_fault(active_fault)) * 100;
+%         fprintf('⭐ Fault-level Slip Rate CV: %.2f%%\n', cv_fault);
+%     end
+% 
+%     % Final solution is the mean of the ensemble
+%     bestRates = mean(ensembleRates, 2);
+% 
+%     fprintf('\n🏁 Inversion completed successfully. Mean rates returned.\n');
+% end

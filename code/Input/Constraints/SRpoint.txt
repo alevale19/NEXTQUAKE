@@ -1,0 +1,4 @@
+FaultName	Lon	Lat	SRmin	SRmax
+Liri	13.4277	41.9405	0.2	0.75
+ValleDelSalto	13.1573	42.2748	1.5	1.6
+FucinoOvindoliPezza	13.477	42.1855	0.1	0.2
