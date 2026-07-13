@@ -135,7 +135,6 @@ for i = 1:numRuptures
 end
 
 %% 6. INVERSION WEIGHTS (The "Knobs")
-targets.weightSR       = params.weightSR;
 targets.weightMFD      = params.weightMFD;
 targets.weightL2       = params.weightL2;
 targets.weightPaleo    = params.weightPaleo;
