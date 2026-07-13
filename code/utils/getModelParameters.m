@@ -78,10 +78,10 @@ function params = getModelParameters()
     t2b.setFont(titleFont); t2b.setForeground(Color(0.2, 0.5, 0.2));
     col3.add(t2b); col3.add(Box.createRigidArea(Dimension(0, 10)));
     
-    labels2b = {'Weight Slip Rate:', 'Weight Paleoseismic Rate:', 'Weight Regional MFD:', ...
+    labels2b = {'Weight Paleoseismic Rate:', 'Weight Regional MFD:', ...
                 'Weight Fault MFD:', 'Weight Segmentation:', 'SA Runs:', ...
-                'Number of Iterations:', 'Weight Smoothing (L2):'};
-    defs2b   = {'1', '', '0', '', '', '2', '1000000', '0.0001'};
+                'Number of Iterations:'};
+    defs2b   = {'', '0', '', '', '2', '1000000'};
     
     fields2b = cell(1, length(labels2b));
     for i = 1:length(labels2b)
@@ -136,8 +136,10 @@ function params = getModelParameters()
         params.mu = 3e10; % Shear Modulus in Pascal (Nm^-2)
         params.MoRateReduction = 0.0;  % Optional additional moment rate reduction (0 = none, 1 = full reduction). It applies only to regional MFD.
         params.mag_delta = 0.1;        % Magnitude bin width for building the truncated GR used as target.
-    
+        params.weightL2          = 0.0001; % Weight Smoothing (L2)
+        
         %params.seed = randi(100000); %uncomment to get a seed number of each run
+        
         params.minRecommendedK = 500; % average number of times that the SA explores a single rupture
 
         % Extract from Column 2 (Note the index shift: 8 is now Time Settings, 9 is Window)
@@ -145,14 +147,12 @@ function params = getModelParameters()
         params.currentYear = str2double(char(fields2a{10}.getText()));
 
         % Extract from Column 3
-        params.weightSR          = str2double(char(fields2b{1}.getText()));
-        params.weightPaleo       = str2double(char(fields2b{2}.getText()));
-        params.weightMFD         = str2double(char(fields2b{3}.getText())); 
-        params.weightLocalMFD    = str2double(char(fields2b{4}.getText())); 
-        params.weightSeg         = str2double(char(fields2b{5}.getText()));
-        params.runSA             = str2double(char(fields2b{6}.getText()));
-        params.numIter           = str2double(char(fields2b{7}.getText()));
-        params.weightL2          = str2double(char(fields2b{8}.getText()));
+        params.weightPaleo       = str2double(char(fields2b{1}.getText()));
+        params.weightMFD         = str2double(char(fields2b{2}.getText())); 
+        params.weightLocalMFD    = str2double(char(fields2b{3}.getText())); 
+        params.weightSeg         = str2double(char(fields2b{4}.getText()));
+        params.runSA             = str2double(char(fields2b{5}.getText()));
+        params.numIter           = str2double(char(fields2b{6}.getText()));
         
         % Paths and Directories Setup
         inputDir = './Input/';
