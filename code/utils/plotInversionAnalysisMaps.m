@@ -93,6 +93,7 @@ function plotInversionAnalysisMaps(outputs, faultResults, subsectionData, invDat
     % =====================================================================
     % MAP 3: POISSON PROBABILITY (Parent Fault Level)
     % =====================================================================
+    maxP = max(faultPoissonProb(faultParticipationRate > 0));
     figure('Name', sprintf('NextQuake - Poisson Probability %dy', forecastWindow), 'Color', 'w');
     hold on; grid on; axis equal; colormap(parula);
     for i = 1:numFaults
@@ -107,12 +108,15 @@ function plotInversionAnalysisMaps(outputs, faultResults, subsectionData, invDat
         end
     end
     title(sprintf('%d-Year Poisson Probability (Mw \\geq %.1f)', forecastWindow, Mw_limit));
+    
+    clim([0 maxP]);
     cb = colorbar; ylabel(cb, 'Probability');
     xlabel('Longitude (°)'); ylabel('Latitude (°)');
     
     % =====================================================================
     % MAP 4: BPT TIME-DEPENDENT PROBABILITY (Parent Fault Level)
     % =====================================================================
+    maxPbpt = max(faultBPTProb(faultParticipationRate > 0));
     figure('Name', sprintf('NextQuake - BPT Time-Dependent Probability %dy', forecastWindow), 'Color', 'w');
     hold on; grid on; axis equal; colormap(spring);
     
@@ -130,6 +134,8 @@ function plotInversionAnalysisMaps(outputs, faultResults, subsectionData, invDat
         end
     end
     title(sprintf('%d-Year BPT Time-Dependent Probability (3-Level Cascade Model)', forecastWindow));
+    
+    clim([0 maxPbpt]);
     cb = colorbar; ylabel(cb, 'BPT Conditional Probability');
     xlabel('Longitude (°)'); ylabel('Latitude (°)');
     
