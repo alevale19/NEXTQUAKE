@@ -10,7 +10,7 @@ A MATLAB framework for building an erthquake rupture forecast model taking into 
 Alessandro Valentini - University of Vienna, Department of Geology
 
 # Licensing and citation
-If you use this code, please cite our paper (...) and the Zenodo DOI (10.5281/zenodo.23160970)".
+If you use this code, please cite our paper (...) and the Zenodo DOI (https://doi.org/10.5281/zenodo.23160969)".
 This project is licensed under the MIT License - see the LICENSE file for details.
 
 # Contact
