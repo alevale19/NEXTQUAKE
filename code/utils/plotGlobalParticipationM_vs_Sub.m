@@ -76,8 +76,8 @@ function plotGlobalParticipationM_vs_Sub(outputs, invData, bestRates, subsection
     % =====================================================================
     % --- RENDER THE UCERF3 MASTER PLOT ---
     % =====================================================================
-    figName = sprintf('NextQuake - Global System Participation Profiles (%s)', plotTitleStr);
-    figure('Name', figName, 'Color', 'w', 'Position', [100, 100, 900, 600]);
+    figName = sprintf('Global System Participation Profiles (%s)', plotTitleStr);
+    figure('Name', figName, 'Color', 'w');
     
     % Find inter-fault boundaries (indices where Fault_ID changes)
     faultTransitions = find(diff(subsectionData.Fault_ID) ~= 0);
@@ -90,7 +90,7 @@ function plotGlobalParticipationM_vs_Sub(outputs, invData, bestRates, subsection
     colormap(gca, jet); 
     clim([-6 -1]);      
     title(sprintf('Incremental rate (%s)', plotTitleStr), 'FontWeight', 'bold', 'FontSize', 11, 'HorizontalAlignment', 'center');
-    ylabel('Magnitude');
+    ylabel('Magnitude (M_w)');
     
     % Draw vertical dividers shifted by +0.5 to fall between pixels
     hold on;
@@ -106,7 +106,7 @@ function plotGlobalParticipationM_vs_Sub(outputs, invData, bestRates, subsection
     colormap(gca, jet);
     clim([-6 -1]);
     title(sprintf('Cumulative rate (%s)', plotTitleStr), 'FontWeight', 'bold', 'FontSize', 11, 'HorizontalAlignment', 'center');
-    xlabel('Subsection ID'); ylabel('Magnitude');
+    xlabel('Subsection ID'); ylabel('Magnitude (M_w)');
     
     % Draw vertical dividers shifted by +0.5
     hold on;
