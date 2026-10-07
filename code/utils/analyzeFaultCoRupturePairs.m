@@ -79,7 +79,7 @@ function faultCoRuptureStats = analyzeFaultCoRupturePairs(faultResults, subsecti
     end
     
     % 5. PLOT THE CO-RUPTURE MATRICES
-    figure('Name', 'NextQuake - Parent Fault Co-Rupture Matrix', 'Color', 'w', 'Position', [100, 100, 1000, 450]);
+    figure('Name', 'Fault Section Co-Rupture Matrix', 'Color', 'w');
     
     % Subplot 1: Shared Rates (Log10)
     subplot(1, 2, 1);
