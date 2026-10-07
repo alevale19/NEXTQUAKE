@@ -1,14 +1,14 @@
 function outputs = processAnnealingResults(bestRates, invData, faultResults, subsectionData, params)
-    fprintf('🧮 Processing Simulated Annealing results (Rupture-Level Area-Weighted Gain for OpenQuake)...\n');
+    fprintf('🧮 Processing Simulated Annealing results...\n');
     
     if nargin < 5, params = struct(); end
     if isfield(params, 'forTwind'), t = params.forTwind; else, t = 30; end
-    if isfield(params, 'forecastMw'), mw_lim = params.forecastMw; else, mw_lim = 6.5; end
+    if isfield(params, 'forecastMw'), mw_lim = params.forecastMw; else, mw_lim = 6; end
     
     numSubsections = height(subsectionData);
     numFaults = length(faultResults);
     numRuptures = length(bestRates.mean);
-    logicalGsr = invData.Gsr > 0; % Matrice binaria Ruoture x Sottosezioni
+    logicalGsr = invData.Gsr > 0;
     
     % --- Step 1: Subsection Stationarity (Poisson) ---
     subEventRate = (bestRates.mean(:)' * logicalGsr)'; 
@@ -33,21 +33,35 @@ function outputs = processAnnealingResults(bestRates, invData, faultResults, sub
         if cv_s <= 0 || isnan(cv_s), cv_s = 0.5; end
         
         lambda_s = mu_s / (cv_s^2);
-        funBPT = @(T) cdf('inversegaussian', T, mu_s, lambda_s);
+        
+        % BPT Funcion
+        pdfBPT = @(T) pdf('inversegaussian', T, mu_s, lambda_s);
+        cdfBPT = @(T) cdf('inversegaussian', T, mu_s, lambda_s);
         
         % 3-LEVEL FALLBACK CASCADE LOGIC
+        %1. Time elapsed known
         if ~isnan(subsectionData.Telaps(s))
-            q1 = funBPT(subsectionData.Telaps(s));
-            q2 = funBPT(subsectionData.Telaps(s) + t);
-            if q1 < 0.9999, subBPTProb(s) = (q2 - q1) / (1 - q1); else, subBPTProb(s) = 1.0; end
+            q1 = cdfBPT(subsectionData.Telaps(s));
+            q2 = cdfBPT(subsectionData.Telaps(s) + t);
+            if q1 < 0.9999
+                subBPTProb(s) = (q2 - q1) / (1 - q1); 
+            else
+                subBPTProb(s) = 1.0; 
+            end
         elseif ~isnan(subsectionData.Thist(s))
-            q1 = integral(funBPT, subsectionData.Thist(s), subsectionData.Thist(s) + t);
-            funDenom = @(T) (1 - cdf('inversegaussian', T, mu_s, lambda_s));
-            q2 = integral(funDenom, subsectionData.Thist(s), inf);      
-            subBPTProb(s) = (t - q1) / q2;
+            % Time elapsed unknow - use historic open interval
+            S_func = @(T) (1 - cdfBPT(T));
+            denom = integral(S_func, subsectionData.Thist(s), inf);
+            num = integral(S_func, subsectionData.Thist(s), subsectionData.Thist(s) + t);
+            if denom > 0
+                subBPTProb(s) = num / denom;
+            else
+                subBPTProb(s) = subPoissonProb(s);
+            end
         else
-            q_unk = integral(funBPT, 0, t);                      
-            subBPTProb(s) = (t - q_unk) / mu_s;
+            % Time unkown
+            q_unk = integral(@(T) (1 - cdfBPT(T)), 0, t);                      
+            subBPTProb(s) = q_unk / mu_s;
         end
         
         if subBPTProb(s) > 1, subBPTProb(s) = 1; end
@@ -55,60 +69,41 @@ function outputs = processAnnealingResults(bestRates, invData, faultResults, sub
     end
     warning('on', id_warn);
     
-    % --- Step 3: Calcolo del Gain di ogni Sottosezione ---
+    % --- Step 3: compute subsections' Gain ---
     subGain = ones(numSubsections, 1);
-    for s = 1:numSubsections
-        if subPoissonProb(s) > 0
-            subGain(s) = subBPTProb(s) / subPoissonProb(s);
-        end
-    end
+    validGainIdx = subPoissonProb > 0;
+    subGain(validGainIdx) = subBPTProb(validGainIdx) ./ subPoissonProb(validGainIdx);
     
-    % --- Step 4: Calcolo del Gain per ROTTURA e Modifica dei Tassi ---
+    % --- Step 4: compute rupture's Gain and modify rates ---
     rupGain = ones(numRuptures, 1);
-    bestRates_BPT = bestRates.mean(:); % Inizializziamo il vettore dei tassi modificati
-    
-    secAreas = subsectionData.Area_km2; % Vettore delle aree delle sottosezioni
+    bestRates_BPT = bestRates.mean(:); 
+    secAreas = subsectionData.Area_km2; 
     
     for r = 1:numRuptures
-        if bestRates.mean(r) == 0, continue; end % Salta le rotture inattive
+        if bestRates.mean(r) == 0, continue; end 
         
-        % Trova gli indici delle sottosezioni coinvolte in questa rottura
         subInvolved = find(logicalGsr(r, :)); 
         if isempty(subInvolved), continue; end
         
-        % Estrai aree e gain di queste sottosezioni
         areas = secAreas(subInvolved);
         gains = subGain(subInvolved);
         
         totalRupArea = sum(areas);
         if totalRupArea > 0
-            % MEDIA PESATA SULL'AREA del Gain per la rottura r
             rupGain(r) = sum(gains .* areas) / totalRupArea;
         end
         
-        % MODIFICA DEL TASSO POISSONIANO ORIGINALE
         bestRates_BPT(r) = bestRates.mean(r) * rupGain(r);
     end
     
-    % --- Step 5: Aggregazione finale a livello di Parent Fault (per i report) ---
+    % --- Step 5: Parent Fault level aggregation ---
     faultParticipationRate_Poisson = zeros(numFaults, 1);
     faultParticipationRate_BPT     = zeros(numFaults, 1);
     faultPoissonProb               = zeros(numFaults, 1);
     faultBPTProb                   = zeros(numFaults, 1);
     
-    globalLookup = struct('nf', cell(numSubsections, 1));
-    current_global = 1;
     for nf = 1:numFaults
-        for s_idx = 1:faultResults(nf).m
-            for d_idx = 1:faultResults(nf).n
-                globalLookup(current_global).nf = nf;
-                current_global = current_global + 1;
-            end
-        end
-    end
-    
-    for nf = 1:numFaults
-        subIdx = find([globalLookup.nf] == nf);
+        subIdx = faultResults(nf).GlobalSubIndices;
         if isempty(subIdx), continue; end
         
         for r = 1:numRuptures
@@ -117,13 +112,14 @@ function outputs = processAnnealingResults(bestRates, invData, faultResults, sub
                 faultParticipationRate_BPT(nf)     = faultParticipationRate_BPT(nf) + bestRates_BPT(r);
             end
         end
+        
         faultPoissonProb(nf) = 1 - exp(-t * faultParticipationRate_Poisson(nf));
-        faultBPTProb(nf)     = 1 - prod(1 - subBPTProb(subIdx));
+        faultBPTProb(nf)     = 1 - exp(-t * faultParticipationRate_BPT(nf));
     end
     
-   % --- Step 6: Compilazione Output (Nomi variabili allineati al 100% con plotInversionAnalysisMaps) ---
+    % --- Step 6: Output ---
     outputs = struct();
-    outputs.bestRates_BPT = bestRates_BPT; % Passato all'esportatore XML per OpenQuake
+    outputs.bestRates_BPT = bestRates_BPT; 
     outputs.RuptureGains = rupGain;
     
     outputs.Subsections = table((1:numSubsections)', subEventRate(:), subTmean(:), ...
