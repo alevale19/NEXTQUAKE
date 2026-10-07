@@ -1,6 +1,6 @@
 function checkMomentBalance(bestRates, invData, subsectionData, targets, params)
 % CHECKMOMENTBALANCE - Compares tectonic moment range vs. model release per fault.
-    fprintf('⚖️ Calculating Moment Rate Balance (using Gsr matrix)...\n');
+    fprintf('⚖️ Calculating Moment Rate Budget Allocation...\n');
     
     mu = params.mu; 
     faultNames = unique(subsectionData.FaultName, 'stable');
@@ -42,13 +42,13 @@ function checkMomentBalance(bestRates, invData, subsectionData, targets, params)
     end
     
     % --- 3. Visualization ---
-    figure('Name', 'Moment Rate Balance', 'Color', 'w', 'Position', [100 100 1000 500]);
+    figure('Name', 'Moment Rate Allocation', 'Color', 'w');
     
     x = 1:numFaults;
     
     % A. Single bar for Inversion Result
-    b = bar(x, modelTotal, 0.5, 'FaceColor', [0.8 0.3 0.3], 'EdgeColor', 'none', ...
-            'DisplayName', 'Inversion Result (Model)');
+    b = bar(x, modelTotal, 0.5, 'FaceColor', [0.75 0.75 0.75], 'EdgeColor', 'none', ...
+            'DisplayName', 'Inversion (Mean)');
     hold on;
     
     % B. Errorbar representing [Min, Max] Geological Range
@@ -57,17 +57,17 @@ function checkMomentBalance(bestRates, invData, subsectionData, targets, params)
     errHigh = budgetMax - budgetMean;
     
     hErr = errorbar(x, budgetMean, errLow, errHigh, 'k.', 'LineWidth', 1.2, ...
-                    'CapSize', 5, 'DisplayName', 'Geological Range [Min, Max]');
+                    'CapSize', 5, 'DisplayName', 'Tectonic Moment Rate Range [Min, Max]');
                 
     % C. Square marker representing Geological Mean Target
     hSq = plot(x, budgetMean, 's', 'MarkerSize', 6, ...
                'MarkerEdgeColor', 'k', 'MarkerFaceColor', [0.2 0.4 0.6], ...
-               'LineWidth', 1.0, 'DisplayName', 'Geological Mean Target');
+               'LineWidth', 1.0, 'DisplayName', 'Tectonic Moment Rate (Mean)');
     
     % Formatting
     set(gca, 'XTick', 1:numFaults, 'XTickLabel', faultNames, 'XTickLabelRotation', 45);
-    ylabel('Moment Rate [N-m/yr]', 'FontSize', 11, 'FontWeight', 'bold');
-    title('Moment Balance: Model Release vs. Geological Target Range', 'FontSize', 12);
+    ylabel('Moment Rate [N-m/yr]', 'FontSize', 11);
+    title('Seismic Moment Rate: Tectonic vs. Inversion', 'FontSize', 12);
     legend([b, hSq, hErr], 'Location', 'northeast');
     grid on; box on;
     xlim([0.5, numFaults + 0.5]);
@@ -77,13 +77,13 @@ function checkMomentBalance(bestRates, invData, subsectionData, targets, params)
     totalModel  = sum(modelTotal);
     
     fprintf('\n--- Global Moment Report ---\n');
-    fprintf('Total Geological Budget (Mean): %.2e Nm/yr\n', totalBudget);
+    fprintf('Total Tectonic Budget (Mean): %.2e Nm/yr\n', totalBudget);
     fprintf('Total Model Release:            %.2e Nm/yr\n', totalModel);
     fprintf('📊 Global Balance: Model covers %.2f%% of the Mean Tectonic Budget.\n', (totalModel/totalBudget)*100);
     
     if (totalModel/totalBudget) < 0.8
-        fprintf('⚠️ Warning: Model is under-predicting the total moment budget.\n');
+        fprintf('⚠️ Warning: Model could under-predicting the total moment budget.\n');
     elseif (totalModel/totalBudget) > 1.2
-        fprintf('⚠️ Warning: Model is over-predicting the total moment budget.\n');
+        fprintf('⚠️ Warning: Model could over-predicting the total moment budget.\n');
     end
 end
