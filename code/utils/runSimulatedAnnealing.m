@@ -177,7 +177,7 @@ active_fault = mean_fault > 1e-6;
 cv_fault_vec = std_fault(active_fault) ./ mean_fault(active_fault); % Dimensionless CV
 
 % 2. Plot Ensemble CV Histograms
-figure('Name', 'Ensemble CV Histograms', 'Position', [100 100 1000 420]);
+figure('Name', 'Ensemble CV Histograms');
 
 % Panel A: Rupture-Level Rate Variability
 subplot(1, 2, 1);
@@ -216,7 +216,7 @@ numSub = length(meanSR);
 x_idx  = 1:numSub;
 
 % Fig. 2 - Slip Rate Match with 5th-95th Percentile Bounds
-figure('Name', 'Slip Rate Match', 'Position', [100 100 1100 500]);
+figure('Name', 'Slip Rate Match');
 
 % 3. Plot 95% Confidence Interval (p5-p95 shaded area)
 fill([x_idx, fliplr(x_idx)], [p95_SR', fliplr(p5_SR')], ...
@@ -243,49 +243,48 @@ legend('Location', 'northeastoutside');
 
 % --- Normalized Slip Rate Position Index (R_i Test) ---
 
-% 1. Recupera i bounds geologici [numSub x 1]
 SR_min = targets.minSR(:);
 SR_max = targets.maxSR(:);
 range_SR = SR_max - SR_min;
 
-% Evita divisioni per zero nel caso improbabile in cui min == max
+% avoid division by 0 if min == max
 range_SR(range_SR == 0) = eps; 
 
-% 2. Calcola la matrice R_i per TUTTE le 100 run [numSub x 100]
-% all_runs_SR ha dimensione [numSub x 100]
+% 2. compute Ri matrix for all 100 runs [numSub x 100]
+% all_runs_SR size = [numSub x 100]
 R_all = (all_runs_SR - SR_min) ./ range_SR;
 
-% 3. Calcola la media R_i per ogni sotto-sezione attraverso le 100 run [numSub x 1]
+% 3. Compute the mean Ri for each subsection [numSub x 1]
 R_mean = mean(R_all, 2);
 
-% --- VISUALIZZAZIONE ---
-figure('Name', 'Normalized Slip Rate Position (R_i Analysis)', 'Position', [100 100 1100 450]);
+% --- PLOTTING ---
+figure('Name', 'Normalized Slip Rate Position (Ri Analysis)');
 
-% Pannello A: Istogramma della distribuzione di TUTTI i valori R_i (60 sub x 100 run)
-subplot(1, 2, 1);
-histogram(R_all(:), 20, 'FaceColor', [0.3 0.7 0.4], 'EdgeColor', 'w', 'Normalization', 'pdf');
-hold on;
-xline(0.5, 'r--', 'Mid-range (0.5)', 'LineWidth', 1.5, 'FontSize', 10, 'LabelVerticalAlignment', 'top');
-grid on; box on;
-title('a) Global Distribution of R_i Across Ensemble', 'FontSize', 11, 'FontWeight', 'bold');
-xlabel('Normalized Slip Rate Index (R_i)', 'FontSize', 10, 'FontWeight', 'bold');
-ylabel('Probability Density', 'FontSize', 10, 'FontWeight', 'bold');
-xlim([-0.1 1.1]);
+% % Pannello A: histogram of all R_i distribution (60 sub x 100 run)
+% subplot(1, 2, 1);
+% histogram(R_all(:), 20, 'FaceColor', [0.3 0.7 0.4], 'EdgeColor', 'w', 'Normalization', 'pdf');
+% hold on;
+% xline(0.5, 'r--', 'Mid-range (0.5)', 'LineWidth', 1.5, 'FontSize', 10, 'LabelVerticalAlignment', 'top');
+% grid on; box on;
+% title('a) Global Distribution of R_i Across Ensemble', 'FontSize', 11, 'FontWeight', 'bold');
+% xlabel('Normalized Slip Rate Index (R_i)', 'FontSize', 10, 'FontWeight', 'bold');
+% ylabel('Probability Density', 'FontSize', 10, 'FontWeight', 'bold');
+% xlim([-0.1 1.1]);
 
-% Pannello B: Posizione media \overline{R_i} lungo il profilo delle sotto-sezioni
-subplot(1, 2, 2);
+% Pannello B: Average poisition of R_i along the subesection
+% subplot(1, 2, 2);
 plot(1:length(R_mean), R_mean, 'o-', 'Color', [0.1 0.4 0.6], 'LineWidth', 1.2, ...
      'MarkerFaceColor', [0.2 0.6 0.8], 'MarkerSize', 5, 'DisplayName', '\overline{R_i} per Subsection');
 hold on;
-yline(0.5, 'r--', 'Ideal Center (0.5)', 'LineWidth', 1.5);
+% yline(0.5, 'r--', 'Ideal Center (0.5)', 'LineWidth', 1.5);
 yline(0, 'k:', 'Min Bound (0)');
 yline(1, 'k:', 'Max Bound (1)');
 grid on; box on;
-title('b) Mean Relative Position \overline{R_i} per Subsection', 'FontSize', 11, 'FontWeight', 'bold');
+title('Mean Relative Position of R_i per Subsection', 'FontSize', 11, 'FontWeight', 'bold');
 xlabel('Subsection Index', 'FontSize', 10, 'FontWeight', 'bold');
-ylabel('Mean Relative Position \overline{R_i}', 'FontSize', 10, 'FontWeight', 'bold');
+ylabel('R_i', 'FontSize', 10, 'FontWeight', 'bold');
 ylim([-0.1 1.1]);
 xlim([1 length(R_mean)]);
 
-sgtitle('Kinematic Allocation Unbiasedness Test Across Ensemble (N=100)', 'FontSize', 12, 'FontWeight', 'bold');
+% sgtitle('Kinematic Allocation Unbiasedness Test Across Ensemble (N=100)', 'FontSize', 12, 'FontWeight', 'bold');
 end
