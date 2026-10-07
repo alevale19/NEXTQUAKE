@@ -5,7 +5,7 @@ function plotCentroids3D(faultResults, subsectionData)
 %    faultResults   - Struct with original traces (coordsWGS)
 %    subsectionData - Table with X_km, Y_km, Z_km
 
-    figure('Name', 'NEXTQUAKE - 3D Fault System', 'Color', 'w');
+    figure('Name', '3D Fault System', 'Color', 'w');
     hold on;
 
     % 1. Plot Surface Traces (Blue lines at Z = 0)
@@ -34,7 +34,7 @@ function plotCentroids3D(faultResults, subsectionData)
     xlabel('Easting (km)');
     ylabel('Northing (km)');
     zlabel('Depth (km)');
-    title('3D View: Surface Traces & Subsection Centroids');
+    title('3D View: Fault Surface Traces & Subsection Centroids');
     
     axis equal;
     grid on;
