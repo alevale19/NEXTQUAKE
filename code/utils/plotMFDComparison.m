@@ -58,23 +58,23 @@ function plotMFDComparison(bestRates, invData, targets, params)
     targetCumulative = flipud(cumsum(flipud(targets.mfdTarget)));
     
     % --- 3. GENERATE PLOTS ---
-    figure('Name', 'MFD Comparison: Model Ensemble vs Target', 'Color', 'w', 'Position', [100 100 850 700]);
+    figure('Name', 'MFD Comparison: Model vs Constraint', 'Color', 'w');
     
     % -----------------------------------------
     % SUBPLOT 1: INCREMENTAL RATES
     % -----------------------------------------
     subplot(2,1,1);
-    bar(targets.mfdBins, modelInc_mean, 1, 'FaceColor', [0.75 0.75 0.75], 'EdgeColor', [0.4 0.4 0.4], 'DisplayName', 'Model (Mean)');
+    bar(targets.mfdBins, modelInc_mean, 1, 'FaceColor', [0.75 0.75 0.75], 'EdgeColor', [0.4 0.4 0.4], 'DisplayName', 'Inversion (Mean)');
     hold on;
     
     if hasPercentiles
         errorbar(targets.mfdBins, modelInc_mean, modelInc_mean - modelInc_p5, modelInc_p95 - modelInc_mean, ...
-            'k.', 'LineWidth', 1.2, 'CapSize', 4, 'DisplayName', 'Model (5th-95th %ile)');
+            'k.', 'LineWidth', 1.2, 'CapSize', 4, 'DisplayName', '95% bounds');
     end
     
-    plot(targets.mfdBins, targets.mfdTarget, 'r-o', 'LineWidth', 2, 'MarkerSize', 5, 'DisplayName', 'Target');
+    plot(targets.mfdBins, targets.mfdTarget, 'r-o', 'LineWidth', 2, 'MarkerSize', 5, 'DisplayName', 'Regional MFD');
     set(gca, 'YScale', 'log'); grid on; box on;
-    ylabel('Annual Rate (Incremental) [1/yr]');
+    ylabel('Incremental Annual Rate [1/yr]');
     title('Incremental Magnitude-Frequency Distribution (MFD)');
     legend('Location', 'northeast');
     xlim([min(targets.mfdBins)-0.15, max(targets.mfdBins)+0.15]);
@@ -90,21 +90,19 @@ function plotMFDComparison(bestRates, invData, targets, params)
         xFill = [targets.mfdBins(:); flipud(targets.mfdBins(:))]';
         yFill = [modelCum_p5(:); flipud(modelCum_p95(:))]';
         
-        fill(xFill, yFill, [0.0 0.45 0.74], 'FaceAlpha', 0.15, 'EdgeColor', 'none', 'DisplayName', 'Model Epistemic Range (p5-p95)');
-        hold on;
-        
         % Plot percentile boundary lines
         plot(targets.mfdBins, modelCum_p5, ':', 'Color', [0.0 0.45 0.74], 'LineWidth', 1.2, 'HandleVisibility', 'off');
         plot(targets.mfdBins, modelCum_p95, ':', 'Color', [0.0 0.45 0.74], 'LineWidth', 1.2, 'HandleVisibility', 'off');
     end
     
-    plot(targets.mfdBins, modelCum_mean, 'b-', 'LineWidth', 2.5, 'DisplayName', 'Model (Ensemble Mean)');
+    plot(targets.mfdBins, modelCum_mean, 'b-', 'LineWidth', 2.5, 'DisplayName', 'Inversion (Mean)');
     hold on;
-    plot(targets.mfdBins, targetCumulative, 'r--', 'LineWidth', 2, 'DisplayName', 'Target (Cumulative)');
+    fill(xFill, yFill, [0.0 0.45 0.74], 'FaceAlpha', 0.15, 'EdgeColor', 'none', 'DisplayName', '95% bounds');
+    plot(targets.mfdBins, targetCumulative, 'r--', 'LineWidth', 2, 'DisplayName', 'Regional MFD');
     
     set(gca, 'YScale', 'log'); grid on; box on;
-    xlabel('Magnitude (Mw)');
-    ylabel('Annual Rate (N \geq Mw) [1/yr]');
+    xlabel('Mw');
+    ylabel('Cumulative Annual Rate [1/yr]');
     title('Cumulative Magnitude-Frequency Distribution (MFD)');
     legend('Location', 'northeast');
     xlim([min(targets.mfdBins)-0.15, max(targets.mfdBins)+0.15]);
