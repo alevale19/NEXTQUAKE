@@ -11,7 +11,7 @@ function plotFaultSystem(faultResults, params)
     % =========================================================
     % FIGURE 1: 2D MAP GEOMETRY & MESH BOX (FROM UPPER EDGE)
     % =========================================================
-    figure('Name', 'NEXTQUAKE - Fault Discretization Map', 'NumberTitle', 'off', 'Color', 'w');
+    figure('Name', 'Fault Discretization Map', 'Color', 'w');
     hold on; grid on; axis equal;
     
     h1 = []; h2 = []; h3 = []; h4 = []; % Handles for structural legend
@@ -23,18 +23,16 @@ function plotFaultSystem(faultResults, params)
         
         % 2. Plot 2D Mesh Box (Discretization grid starting from Upper Edge)
         if isfield(f, 'lat_mesh') && isfield(f, 'lon_mesh')
-            % Disegna la griglia in pianta. Se la mesh è calcolata da upperST a lowerST,
-            % la prima riga della griglia mostrerà visivamente l'upper edge isolato dalla traccia blu.
-            h4 = plot(f.lon_mesh, f.lat_mesh, 'k-', 'LineWidth', 0.5); % Linee lungo lo strike
-            plot(f.lon_mesh', f.lat_mesh', 'k-', 'LineWidth', 0.5);    % Linee lungo il dip
-            
-            % --- TRACCIA INFERIORE (Bottom Trace) ---
-            % Isola l'ultimo profilo della mesh (corrispondente al lowerST)
+          
+            h4 = plot(f.lon_mesh, f.lat_mesh, 'k-', 'LineWidth', 0.5);
+            plot(f.lon_mesh', f.lat_mesh', 'k-', 'LineWidth', 0.5);    
+         
+            % --- Bottom Trace ---
             h2 = plot(f.lon_mesh(:, end), f.lat_mesh(:, end), 'r--', 'LineWidth', 1);
         end
         
         % 3. Plot Upper Edge Nodes (Yellow markers on the start of the mesh box)
-        % Se vuoi vedere i nodi sull'upper edge sismogenico anziché sulla traccia superficiale:
+        
         if isfield(f, 'lon_mesh') && isfield(f, 'lat_mesh')
             h3 = plot(f.lon_mesh(:, 1), f.lat_mesh(:, 1), 'ko', 'MarkerFaceColor', 'y', 'MarkerSize', 4);
         end
@@ -64,7 +62,7 @@ function plotFaultSystem(faultResults, params)
     end
     
     xlabel('Longitude (°)'); ylabel('Latitude (°)');
-    title('Fault System Geometry & Constraint Field Sites (Map View)');
+    title('Fault System Geometry');
     
     % Safe Legend Management for Figure 1
     f1_handles = []; f1_labels = {};
@@ -81,9 +79,9 @@ function plotFaultSystem(faultResults, params)
     hold off;
     
     % =========================================================
-    % FIGURE 2: SYSTEM CONNECTIVITY
+    % FIGURE 2: SYSTEM CONNECTIVITY (FAUL CLUSTERS)
     % =========================================================
-    figure('Name', 'NEXTQUAKE - Fault Systems Connectivity', 'NumberTitle', 'off', 'Color', 'w');
+    figure('Name', 'Fault Clusters', 'Color', 'w');
     hold on; grid on; axis equal; 
     
     allIDs = [faultResults.SystemID];
@@ -96,16 +94,16 @@ function plotFaultSystem(faultResults, params)
         f = faultResults(nf);
         colorIdx = find(uIDs == f.SystemID);
         sysColor = cmap(colorIdx, :);
-        
+
         h_sys = plot(f.coordsWGS(:,1), f.coordsWGS(:,2), '-', 'Color', sysColor, ...
             'LineWidth', 3);
     end
     
     xlabel('Longitude (°)'); ylabel('Latitude (°)');
-    title(sprintf('Fault Network: %d Independent Systems Identified', nSystems));
+    title(sprintf('Fault Clusters: %d Independent Systems Identified', nSystems));
     
-    if ~isempty(h_sys)
-        legend(h_sys(1), 'System Cluster', 'Location', 'northeastoutside');
-    end
+    % if ~isempty(h_sys)
+    %     legend(h_sys(1), 'System Cluster', 'Location', 'northeastoutside');
+    % end
     hold off;
 end
