@@ -11,7 +11,7 @@ function plotS2SConnections(faultResults, Global_Subsections_Data, A_S2S)
         return;
     end
 
-    figure('Name', 'NEXTQUAKE - S2S Propagation Bridges', 'NumberTitle', 'off', 'Color', 'w');
+    figure('Name', 'S2S Propagation Bridges', 'Color', 'w');
 %     set(gca, 'Color', [0.1 0.1 0.1]); % Sfondo grigio scuro/nero
 % set(gcf, 'Color', [0.1 0.1 0.1]);
 % grid off;
@@ -60,7 +60,7 @@ function plotS2SConnections(faultResults, Global_Subsections_Data, A_S2S)
             'MarkerEdgeColor', 'k', 'MarkerSize', 5);
         
         % Collect handles for legend (limit to a reasonable number)
-        if f <= 15 
+        if f <= 100 
             node_handles(end+1) = h;
             fault_names{end+1} = faultResults(fid).Name;
         end
