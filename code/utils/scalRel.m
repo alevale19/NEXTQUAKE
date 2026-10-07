@@ -1,56 +1,82 @@
-forecastMw = 5.5:0.1:8;
+% =========================================================================
+% SEISMIC SCALING RELATIONS & SUBSECTION SIZING ANALYSIS
+% =========================================================================
 
-% Inizializziamo i vettori e le matrici per ospitare i risultati del ciclo
-numSteps = length(forecastMw);
-av = zeros(1, numSteps);
+clear; clc; close all;
 
-% Pre-allocazione per le matrici dei modelli rimanenti (solo Rupture Area)
-% Gruppo WC94 RA: contiene 4 relazioni (N, SS, R)
-L_WC94_all = zeros(3, numSteps);
-% Gruppo T17 RA Crustal: contiene 3 relazioni (N, SS, R) -> Esclusa la subduzione
-L_T17_all  = zeros(3, numSteps);
+%% 1. PARAMETERS & INPUT MAGNITUDE RANGE
+forecastMw = 4.5:0.1:9.2; % Magnitude range for evaluation
+inputVal   = forecastMw;  % Alias for consistency
 
-% Generiamo i dati ciclando magnitudo per magnitudo
-for i = 1:numSteps
-    % Utilizziamo 'evalc' per silenziare i log della funzione durante il ciclo for
-    % in modo da non intasare la riga di comando di MATLAB
-    [txt, subSectLength] = evalc("seismicScalingEngine(forecastMw(i), 'Mw2Length', 'All')");
-    av(i) = subSectLength;
-    
-    % Gruppo 1: Wells & Coppersmith (1994) Rupture Area -> sqrt(RA)
-    L_WC94_all(:, i) = [sqrt(10^(-2.87 + 0.82 * forecastMw(i))); ...
-                        sqrt(10^(-3.42 + 0.90 * forecastMw(i))); ...
-                        sqrt(10^(-3.99 + 0.98 * forecastMw(i)))];
-                    
-    % Gruppo 2: Thingbaijam (2017) Crustal Rupture Area -> sqrt(RA)
-    L_T17_all(:, i)  = [sqrt(10^(-2.551 + 0.808 * forecastMw(i))); ...
-                        sqrt(10^(-3.486 + 0.942 * forecastMw(i))); ...
-                        sqrt(10^(-4.362 + 1.049 * forecastMw(i)))];
-end
+%% 2. EMPIRICAL SCALING RELATIONS (RUPTURE AREA - RA [km^2])
+% Wells & Coppersmith (1994) - Crustal faults
+L_RA_WC94N  = 10.^(-2.87 + 0.82 * inputVal); % Normal faults (Mw 5.2 - 7.3)
+L_RA_WC94SS = 10.^(-3.42 + 0.90 * inputVal); % Strike-Slip faults (Mw 4.8 - 7.9)
+L_RA_WC94R  = 10.^(-3.99 + 0.98 * inputVal); % Reverse faults (Mw 4.8 - 7.6)
 
-% =====================================================================
-% GENERAZIONE DEL GRAFICO INFORMATIVO (Solo Modelli di Area)
-% =====================================================================
-figure('Name', 'Scaling Relations Calibration (RA Only)', 'Color', 'w');
+% Thingbaijam et al. (2017) - Crustal & Subduction faults
+L_RA_T17N   = 10.^(-2.551 + 0.808 * inputVal); % Normal faults (Mw 5.8 - 8.4)
+L_RA_T17SS  = 10.^(-3.486 + 0.942 * inputVal); % Strike-Slip faults (Mw 5.4 - 8.7)
+L_RA_T17R   = 10.^(-4.362 + 1.049 * inputVal); % Reverse faults (Mw 5.6 - 7.7)
+L_RA_T17sub = 10.^(-3.292 + 0.949 * inputVal); % Subduction zones (Mw 6.7 - 9.2)
 
-% Plot delle singole relazioni (passate trasposte per plottare le curve)
-semilogy(forecastMw, L_WC94_all', 'r', 'LineWidth', 1)
-hold on;
-semilogy(forecastMw, L_T17_all', 'b', 'LineWidth', 1)
+%% 3. ENSEMBLE MEAN CHARACTERISTIC LENGTHS (sqrt(RA) [km])
+av_N   = (sqrt(L_RA_WC94N)  + sqrt(L_RA_T17N))  / 2;
+av_R   = (sqrt(L_RA_WC94R)  + sqrt(L_RA_T17R))  / 2;
+av_SS  = (sqrt(L_RA_WC94SS) + sqrt(L_RA_T17SS)) / 2;
+av_ALL = (sqrt(L_RA_WC94N)  + sqrt(L_RA_T17N) + ...
+          sqrt(L_RA_WC94R)  + sqrt(L_RA_T17R) + ...
+          sqrt(L_RA_WC94SS) + sqrt(L_RA_T17SS)) / 6;
 
-% Plot della nuova media finale (l'ensemble ridotto "av") in forte evidenza
-semilogy(forecastMw, av, 'k', 'LineWidth', 3) 
+%% 4. SEISMIC MOMENT & AVERAGE DISPLACEMENT CALCULATION
+Mo       = 10.^(1.5 * inputVal + 9.05); % Seismic Moment [N*m]
+areas_m2 = L_RA_T17SS * 1e6;            % Convert km^2 to m^2 (using T17 SS Area)
+mu       = 3e10;                        % Shear modulus [Pa]
+Dr       = Mo ./ (mu * areas_m2);       % Average Displacement [m]
 
-% Linea di controllo a 15 km (limite classico UCERF3/Appennino per le sezioni)
-plot([5.5, 8.0], [15, 15], 'g--', 'LineWidth', 2) 
+%% 5. MULTI-PANEL VISUALIZATION
+figure('Name', 'Scaling Relations Calibration & Subsection Sizing', 'Color', 'w', 'Position', [100 100 1200 450]);
 
-xlabel('Magnitude (Mw)');
-ylabel('Length / Sqrt(Area) (km)');
-title('Ensemble Scaling Relations for Subsection Sizing (Area Models Only)');
+% --- Subplot 1: Rupture Area vs. Magnitude (Validity Ranges) ---
+subplot(1, 3, 1);
+% Wells & Coppersmith (1994) - Solid lines
+semilogx(L_RA_WC94N(8:29),   inputVal(8:29),   'k',  'LineWidth', 2, 'DisplayName', 'WC94 Normal'); hold on;
+semilogx(L_RA_WC94SS(4:35),  inputVal(4:35),  'r',  'LineWidth', 2, 'DisplayName', 'WC94 SS');
+semilogx(L_RA_WC94R(4:32),   inputVal(4:32),   'b',  'LineWidth', 2, 'DisplayName', 'WC94 Reverse');
 
-% Sistemazione della legenda per l'assetto aggiornato (7 curve totali + 2 evidenze)
-legend('WC94 RA Models', '', '', '', ...
-       'T17 RA Crustal Models', '', '', ...
-       'FINAL ENSEMBLE MEAN', 'Target Limit (15 km)', 'Location', 'Best');
-   
-grid on;
+% Thingbaijam et al. (2017) - Dashed lines
+semilogx(L_RA_T17N(14:36),   inputVal(14:36),  'k--', 'LineWidth', 2, 'DisplayName', 'T17 Normal');
+semilogx(L_RA_T17SS(10:36),  inputVal(10:36),  'r--', 'LineWidth', 2, 'DisplayName', 'T17 SS');
+semilogx(L_RA_T17R(12:32),   inputVal(12:32),  'b--', 'LineWidth', 2, 'DisplayName', 'T17 Reverse');
+semilogx(L_RA_T17sub(23:48), inputVal(23:48), 'm--', 'LineWidth', 2, 'DisplayName', 'T17 Subduction');
+
+axis square; grid on; box on;
+ylabel('M_w', 'FontSize', 11, 'FontWeight', 'bold');
+xlabel('Area (km^2)', 'FontSize', 11, 'FontWeight', 'bold');
+ylim([4.5 8.5]);
+title('a) Empirical Rupture Area', 'FontSize', 12);
+
+% --- Subplot 2: Average Displacement vs. Magnitude ---
+subplot(1, 3, 2);
+plot(Dr, inputVal, 'k', 'LineWidth', 2);
+axis square; grid on; box on;
+ylabel('M_w', 'FontSize', 11, 'FontWeight', 'bold');
+xlabel('D (m)', 'FontSize', 11, 'FontWeight', 'bold');
+xticks(0:2:16);
+ylim([4.5 8.5]);
+title('b) Average Slip (D)', 'FontSize', 12);
+
+% --- Subplot 3: Ensemble Mean Characteristic Length ---
+subplot(1, 3, 3);
+plot(av_N,                 forecastMw, 'r',  'LineWidth', 2, 'DisplayName', 'Normal'); hold on;
+plot(av_SS,                forecastMw, 'b',  'LineWidth', 2, 'DisplayName', 'Strike-Slip');
+plot(av_R,                 forecastMw, 'g',  'LineWidth', 2, 'DisplayName', 'Reverse');
+plot(av_ALL,               forecastMw, 'r:', 'LineWidth', 2, 'DisplayName', 'All Crustal');
+plot(sqrt(L_RA_T17sub),    forecastMw, 'k:', 'LineWidth', 2, 'DisplayName', 'Subduction');
+
+axis square; grid on; box on;
+legend('Location', 'southeast', 'FontSize', 9);
+ylabel('Forecast M_w', 'FontSize', 11, 'FontWeight', 'bold');
+xlabel('L_{sub} (km)', 'FontSize', 11, 'FontWeight', 'bold');
+ylim([4.5 7.0]);
+title('c) Subsection Length (L_{sub})', 'FontSize', 12);
