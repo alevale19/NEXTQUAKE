@@ -1,5 +1,6 @@
 %% NEXTQUAKE - Main Processing Script
 clc; clear; close all;
+set(groot, 'DefaultFigureWindowStyle', 'docked');
 addpath('./utils');
 
 %% 1. INITIALIZATION & PARAMETERS
@@ -95,41 +96,17 @@ end
 
 %% 7. QUICK RESULTS CHECK
 
-% Fig.1 SA Convergence Plot, Fig.2 model Slip Rate vs. data Slip Rate for
-% each subsection, Fig. 3 Event Rate match for each subsection with
+% Fig.4 SA Convergence Plot, Fig.5 Event Rate match for each subsection with
 % paleseismological rates (if any).
 
-% Fig. 1
+% Fig. 4
 figure('Name', 'Convergence History');
 semilogy(energyHistory, 'LineWidth', 1.5);
 grid on;
 xlabel('Iteration'); ylabel('Total Energy');
 title('SA Convergence');
 
-% Calculate final Slip Rates with best solution
-finalSR = (invData.Gsr' * (bestRates.mean .* invData.Dr));
-
-% Fig. 2
-figure('Name', 'Slip Rate Match');
-% Plotting the Max and Min bounds as a shaded area or two lines
-plot(targets.maxSR, '--', 'DisplayName', 'Max Target'); hold on;
-plot(targets.minSR, '--', 'DisplayName', 'Min Target'); 
-
-% "Mean" line for reference:
-meanTarget = (targets.maxSR + targets.minSR) / 2;
-plot(meanTarget, 'k', 'LineWidth', 1.5, 'DisplayName', 'Mean Target');
-
-legend('show');
-grid on;
-title('Slip Rate Inversion Results');
-ylabel('Slip Rate (m/yr)');
-xlabel('Subsection Index');
-% plot(targets.targetSR, 'k--', 'DisplayName', 'Target'); hold on;
-plot(finalSR, 'r', 'LineWidth', 1.2, 'DisplayName', 'Model');
-% legend; xlabel('Subsection Index'); ylabel('Slip Rate (m/yr)');
-% title('Geological Match');
-
-% Fig. 3
+% Fig. 5
 % --- Event Rate Match (Paleoseismic Comparison) ---
 % 1. Calculate the model event rates for each subsection
 finalEventRates = sum(invData.Gsr' .* bestRates.mean', 2);
@@ -154,7 +131,7 @@ if isfield(invData, 'paleoTargetIdx') && ~isempty(invData.paleoTargetIdx)
 end
 
 % 3. Plot the continuous model event rate for all subsections
-plot(finalEventRates, 'r-', 'LineWidth', 1, 'DisplayName', 'Model (All Subs)');
+plot(finalEventRates, 'r-', 'LineWidth', 1, 'DisplayName', 'Model (mean)');
 
 % Formatting
 legend('show', 'Location', 'northeast');
@@ -168,7 +145,7 @@ set(gca, 'YScale', 'log');
 %% 8. VISUALIZATION & QUALITY CHECK
 fprintf('\n📊 Launching Visualizations...\n');
 
-plotFaultSystem(faultResults, params); % Fig.1 2D Map Geometry & Mesh Box; Fig.2 Fault System Connectivity.
+plotFaultSystem(faultResults, params); % Fig.6 2D Map Geometry & Subsections; Fig.7 Fault Clusters.
 plotCentroids3D(faultResults, subsectionData); % Fig. 1 Plots 3D Centroids and Surface Fault Traces.
 plotS2SConnections(faultResults, subsectionData, A_S2S); % Fig. 1 Subsection-to-Subsection (S2S) propagation bridges.
 plotMFDComparison(bestRates, invData, targets, params); % Fig 1. & Fig.2 Plots Model MFD vs Target MFD with 5th and 95th Percentile Bounds (incremental and cumulative, respectively).
@@ -182,7 +159,7 @@ plotMFDComparison(bestRates, invData, targets, params); % Fig 1. & Fig.2 Plots M
 checkMomentBalance(bestRates, invData, subsectionData, targets, params) % Fig.1 moment budget comparison
 
 % === Spatial hazard visualizations optimized for 3D meshes === %
-% 1. Model-Derived Fault Slip Rates (Parent Fault Level), 2. Mean Return Periods (Parent Fault Level), 3. Poisson Probabilities (Parent Fault Level)
+% 1. Fault Slip Rates (Constraint), 2. Mean Return Periods (Parent Fault Level), 3. Poisson Probabilities (Parent Fault Level)
 % 4. BPT Time-Dependent Probabilities (Parent Fault Level), 5. Probability Gain Map (3D Subsection Patch Level), 6. Participation Rate Map (3D Subsection Patch Level in Log10 Scale)
 outputs = processAnnealingResults(bestRates, invData, faultResults, subsectionData, params);
 plotInversionAnalysisMaps(outputs, faultResults, subsectionData, invData, bestRates, params)
@@ -193,10 +170,10 @@ analyzeComplexMultiFaultClusters(faultResults, subsectionData, invData, bestRate
 reportMultiFaultContribution(faultResults, subsectionData, invData, bestRates)
 
 % === Plot Participation Rate at the subsection level. True for BPT-scaled rates, False for Poisson rates === %
-plotGlobalParticipationM_vs_Sub(outputs, invData, bestRates, subsectionData, true, params, targets)
+plotGlobalParticipationM_vs_Sub(outputs, invData, bestRates, subsectionData, false, params, targets)
 
 % === Save OpenQuake Input File === %
-% exportInputToOpenQuake(bestRates, invData, All_Rupture_Candidates, faultResults, params)
+% exportInputToOpenQuake(bestRates, outputs, invData, All_Rupture_Candidates, faultResults, params)
 
 % === Save plots for each Rupture === %
 % save_all_ruptures_SD_Batched(All_Final_Ruptures, subsectionData)
