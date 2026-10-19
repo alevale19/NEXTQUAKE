@@ -47,7 +47,7 @@ function [bestRates, energyHistory] = runSimulatedAnnealing(invData, targets, pa
     energyHistory = zeros(numIter, numRuns); 
     faultSlipEnsemble = zeros(numFaults, numRuns);
     
-    fprintf('\n🚀 Starting Parallel SA Ensemble (%d Runs) with Fast Delta-Energy Updating...\n', numRuns);
+    fprintf('\n🚀 Starting Parallel SA Ensemble (%d Runs)...\n', numRuns);
     
    % --- 2. PARALLEL ENSEMBLE LOOP ---
     totalAnnealingTimer = tic; % Timer globale dell'ensemble
