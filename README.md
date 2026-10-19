@@ -1,10 +1,10 @@
 # NEXTQUAKE
 
 # Overview
-A MATLAB framework for building an erthquake rupture forecast model taking into account time-dependancy and multi-fault rupture inversions via Simulated Annealing.
+A MATLAB framework for building an erthquake rupture forecast model taking into account time-dependance and multi-fault rupture inversions via Simulated Annealing.
 
 # Get started
-...
+
 
 # Contributors
 Alessandro Valentini - University of Vienna, Department of Geology
