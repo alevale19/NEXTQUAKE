@@ -140,7 +140,7 @@ function params = getModelParameters()
         
         %params.seed = randi(100000); %uncomment to get a seed number of each run
         
-        params.minRecommendedK = 500; % average number of times that the SA explores a single rupture
+        params.minRecommendedK = 2000; % average number of times that the SA explores a single rupture
 
         % Extract from Column 2 (Note the index shift: 8 is now Time Settings, 9 is Window)
         params.forTwind          = str2double(char(fields2a{9}.getText()));
