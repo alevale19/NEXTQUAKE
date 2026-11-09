@@ -8,7 +8,7 @@ A MATLAB framework for building an erthquake rupture forecast model taking into 
 ## 1. Installation and overview
 
 Install **MATLAB R2025b** and run `NEXTQUAKE.m`. A graphical user interface (GUI) will open, allowing you to specify the parameters required to construct an earthquake rupture forecast (ERF) model.
-NEXTQUAKE first generates a catalogue of plausible earthquake ruptures for the study area. It then estimates time-independent (Poissonian) and time-dependent (Brownian Passage Time, BPT) rupture rates by inverting the specified constraints using a simulated annealing (SA) algorithm. Finally, it automatically saves figures and a log file containing information about the run. Optionally, it can also generate input files for subsequent probabilistic seismic hazard analysis (PSHA) using OpenQuake (**version TBD**).
+NEXTQUAKE first generates a catalogue of plausible earthquake ruptures for the study area. It then estimates time-independent (Poissonian) and time-dependent (Brownian Passage Time, BPT) rupture rates by inverting the specified constraints using a simulated annealing (SA) algorithm. Finally, it automatically saves figures and a log file containing information about the run. Optionally, it can also generate input files for subsequent probabilistic seismic hazard analysis (PSHA) using OpenQuake.
 
 The workflow is organized into three main stages:
 1. **Rupture catalogue generation:** construct a catalogue of plausible single-fault and multi-fault ruptures.
@@ -96,7 +96,7 @@ Generating the rupture catalogue can be computationally demanding. Once the cata
 
 ### 3.1. Geological slip-rate constraint
 
-The geological slip-rate constraint is mandatory.
+The geological slip-rate constraint is the only mandatory constraint file.
 
 Load a `.txt` file containing the following fields:
 
@@ -178,7 +178,7 @@ The code assigns the specified slip-rate bounds to the subsection corresponding 
 
 ### 3.3. Fault time settings
 
-The fault time settings define the parameters required for the time-dependent BPT calculations.
+The fault time settings define the parameters required for the time-dependent BPT calculations. The two files described in this section are optional. The code can take into account the time dependance even if the time eplased is unkwon for all fault sections in the database.
 
 Load a `.txt` file containing:
 
@@ -188,11 +188,21 @@ Load a `.txt` file containing:
 | `StartFrac` | Starting fraction of the fault section affected by the historical rupture |
 | `EndFrac` | Ending fraction of the fault section affected by the historical rupture |
 | `LastEventYr` | Year of the most recent event |
-| `Thist` | Historical open interval |
-| `CV` | Coefficient of variation of the recurrence-time distribution |
 
-For example, a fault section with `StartFrac = 0` and `EndFrac = 1` is assumed to have ruptured over its entire length during the last event. If `LastEventYr = 1940`, the most recent event occurred in 1940. `Thist` can be set to `NaN` because the historical open interval is not required when the last-event year is known. A value of `CV = 0.5` specifies the coefficient of variation of the recurrence-time distribution.
-If both LastEventYr and Thist are unknown and set to NaN, the code assumes a stationary renewal state.
+For example, a fault section with `StartFrac = 0` and `EndFrac = 1` is assumed to have ruptured over its entire length during the last event. If `LastEventYr = 1940`, the most recent event occurred in 1940. If this file is not uploaded the code will compute the time dependacy assuming that for each fault section the time elapsed interval and the historical open interval are unkown (following Field, 2015).
+
+Load a second `.txt` file containing:
+|---|---|
+| `minMw` | min bound of the magnitude range |
+| `	maxMw` | max bound of the magnitude range |
+| `CV` | Aperiodicity of the recurrence-time distribution |
+
+If this file is not uploaded, the code will use these values as default: if Mw <= 6.7 - CV = 0.5; if Mw <= 7.2 - CV = 0.4; if Mw <= 7.7 - CV = 0.3;
+    and if Mw > 7.7 - CV = 0.2.
+
+**Start year of the Open Historical Interval**
+
+Defining the beginning of the period during which no rupture is known to have occurred.
 
 **Forecast Time Window**
 
@@ -200,7 +210,7 @@ Specifies the duration of the forecast window, in years, over which the Poissoni
 
 **Year for Computing Elapsed Time**
 
-Specifies the reference year used to calculate the elapsed time since the last earthquake.
+Specifies the reference year used to calculate the elapsed time since the last earthquake and the open historical interval.
 For example, if LastEventYr = 1940 and the reference year is 2026, the elapsed time is:[2026-1940=86\text{ years}]
 
 ## 4. Simulated annealing settings
@@ -244,7 +254,7 @@ save_all_ruptures_SD_Batched: save the rupture catalogue and associated subsecti
 
 To generate fault-specific MFD plots, export OpenQuake input files, or save additional plots showing the candidate ruptures, uncomment the corresponding function calls in NEXTQUAKE.m.
 
-**OpenQuake compatibility:** The export functionality has been tested with OpenQuake version (TBD).
+**OpenQuake compatibility:** The export functionality has been tested with OpenQuake version 3.26.2.
 
 # Contributors
 Alessandro Valentini - University of Vienna, Department of Geology
