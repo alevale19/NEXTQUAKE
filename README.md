@@ -192,6 +192,8 @@ Load a `.txt` file containing:
 For example, a fault section with `StartFrac = 0` and `EndFrac = 1` is assumed to have ruptured over its entire length during the last event. If `LastEventYr = 1940`, the most recent event occurred in 1940. If this file is not uploaded the code will compute the time dependacy assuming that for each fault section the time elapsed interval and the historical open interval are unkown (following Field, 2015).
 
 Load a second `.txt` file containing:
+
+| Field | Description |
 |---|---|
 | `minMw` | min bound of the magnitude range |
 | `	maxMw` | max bound of the magnitude range |
