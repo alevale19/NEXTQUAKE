@@ -196,7 +196,7 @@ Load a second `.txt` file containing:
 | Field | Description |
 |---|---|
 | `minMw` | min bound of the magnitude range |
-| `	maxMw` | max bound of the magnitude range |
+| `maxMw` | max bound of the magnitude range |
 | `CV` | Aperiodicity of the recurrence-time distribution |
 
 If this file is not uploaded, the code will use these values as default: if Mw <= 6.7 - CV = 0.5; if Mw <= 7.2 - CV = 0.4; if Mw <= 7.7 - CV = 0.3;
