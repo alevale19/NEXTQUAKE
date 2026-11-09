@@ -1,44 +1,44 @@
-FaultName	StartFrac	EndFrac	LastEventYr	Thist	CV
-Assergi	0	1	NaN	NaN	NaN
-Barete	0	1	NaN	NaN	NaN
-Barisciano	0	1	NaN	NaN	NaN
-Barrea	0	1	NaN	NaN	NaN
-CampoFelice	0	1	NaN	NaN	NaN
-CampoImperatore	0	1	NaN	NaN	NaN
-CampoImperatoreEast	0	1	NaN	NaN	NaN
-Carsoli	0	1	NaN	NaN	NaN
-CastelDiIeri	0	1	NaN	NaN	NaN
-CerchioPescinaParasano	0	1	NaN	NaN	NaN
-CinqueMigliaAremogna	0	1	NaN	NaN	NaN
-Frattura	0	1	NaN	NaN	NaN
-FucinoOvindoliPezza	0	1	1915	NaN	NaN
-Laga	0	1	NaN	NaN	NaN
-Leonessa	0	1	NaN	NaN	NaN
-Liri	0	1	NaN	NaN	NaN
-LognaManigi	0	1	NaN	NaN	NaN
-Magnola	0	1	NaN	NaN	NaN
-Maiella	0	1	NaN	NaN	NaN
-MiddleAternoValley	0	1	NaN	NaN	NaN
-Montereale	0	1	NaN	NaN	NaN
-MtAlvagnano	0	1	NaN	NaN	NaN
-MtCappucciata	0	1	NaN	NaN	NaN
-MtMarsicano	0	1	NaN	NaN	NaN
-MtPettino	0	1	NaN	NaN	NaN
-MtPizzalto	0	1	NaN	NaN	NaN
-MtVelino	0	1	NaN	NaN	NaN
-MtVettore	0	1	2016	NaN	0.3
-Norcia	0	1	NaN	NaN	NaN
-Ocre	0	1	NaN	NaN	NaN
-OfenaTirino	0	1	NaN	NaN	NaN
-PaganicaSanDemetrioMtStabiata	0	1	2009	NaN	NaN
-PostaFibreno	0	1	NaN	NaN	NaN
-Rieti	0	1	NaN	NaN	NaN
-Sangiovanni	0	1	NaN	NaN	NaN
-SanSebastiano	0	1	NaN	NaN	NaN
-Scurcola	0	1	NaN	NaN	NaN
-SellaDiCorno	0	1	NaN	NaN	NaN
-Sulmona	0	1	NaN	NaN	NaN
-Trasacco	0	1	NaN	NaN	NaN
-TreMonti	0	1	NaN	NaN	NaN
-ValleDelSalto	0	1	NaN	NaN	NaN
-Ventrino	0	1	NaN	NaN	NaN
+FaultName	StartFrac	EndFrac	LastEventYr
+Assergi	0	1	NaN
+Barete	0	1	NaN
+Barisciano	0	1	NaN
+Barrea	0	1	NaN
+CampoFelice	0	1	NaN
+CampoImperatore	0	1	NaN
+CampoImperatoreEast	0	1	NaN
+Carsoli	0	1	NaN
+CastelDiIeri	0	1	NaN
+CerchioPescinaParasano	0	1	NaN
+CinqueMigliaAremogna	0	1	NaN
+Frattura	0	1	NaN
+FucinoOvindoliPezza	0	1	1915
+Laga	0	1	NaN
+Leonessa	0	1	NaN
+Liri	0	1	NaN
+LognaManigi	0	1	NaN
+Magnola	0	1	NaN
+Maiella	0	1	NaN
+MiddleAternoValley	0	1	NaN
+Montereale	0	1	NaN
+MtAlvagnano	0	1	NaN
+MtCappucciata	0	1	NaN
+MtMarsicano	0	1	NaN
+MtPettino	0	1	NaN
+MtPizzalto	0	1	NaN
+MtVelino	0	1	NaN
+MtVettore	0	1	2016
+Norcia	0	1	NaN
+Ocre	0	1	NaN
+OfenaTirino	0	1	NaN
+PaganicaSanDemetrioMtStabiata	0	1	2009
+PostaFibreno	0	1	NaN
+Rieti	0	1	NaN
+Sangiovanni	0	1	NaN
+SanSebastiano	0	1	NaN
+Scurcola	0	1	NaN
+SellaDiCorno	0	1	NaN
+Sulmona	0	1	NaN
+Trasacco	0	1	NaN
+TreMonti	0	1	NaN
+ValleDelSalto	0	1	NaN
+Ventrino	0	1	NaN
