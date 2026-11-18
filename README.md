@@ -7,7 +7,7 @@ A MATLAB framework for building an erthquake rupture forecast model taking into 
 
 ## 1. Installation and overview
 
-Install **MATLAB R2025b** and run `NEXTQUAKE.m`. A graphical user interface (GUI) will open, allowing you to specify the parameters required to construct an earthquake rupture forecast (ERF) model.
+Install **MATLAB R2025b** and run `NEXTQUAKE.m`. A graphical user interface (GUI) will open, allowing you to specify the parameters required to construct an earthquake rupture forecast (ERF) model. The GUI relies on Java Swing and therefore cannot be run on an HPC system.
 NEXTQUAKE first generates a catalogue of plausible earthquake ruptures for the study area. It then estimates time-independent (Poissonian) and time-dependent (Brownian Passage Time, BPT) rupture rates by inverting the specified constraints using a simulated annealing (SA) algorithm. Finally, it automatically saves figures and a log file containing information about the run. Optionally, it can also generate input files for subsequent probabilistic seismic hazard analysis (PSHA) using OpenQuake.
 
 The workflow is organized into three main stages:
@@ -47,31 +47,31 @@ Defines the target magnitude used to determine the spatial discretization of fau
 
 **Fault mechanism**
 
-Select the kinematic style used to determine the scaling relationships applied to rupture areas and magnitudes:
-
-- `N`: Normal faulting.
-- `R`: Reverse faulting.
-- `SS`: Strike-slip faulting.
-- `All`: All crustal kinematic styles.
-- `SUB`: Subduction-zone faulting.
+Select the kinematic style used to determine the scaling relationships applied to rupture areas and magnitudes. The drop-down menu allows you to choose from the following options: normal faulting, reverse faulting, strike-slip faulting, all crustal kinematic styles, and subduction-zone faulting.
 
 **Regional b-value**
 
 Specifies the Gutenberg–Richter (GR) b-value used to construct a truncated regional magnitude–frequency distribution (MFD) based on the seismic moment rates of the faults in the database.
 The resulting MFD can be used as the regional MFD constraint or as a reference distribution for comparison with the inversion results.
-This parameter is optional. If no value is specified, the code uses a default value of 1. However, if a regional MFD input file is provided as a constraint, that file takes precedence over the MFD calculated using the b-value and fault moment rates.
+The regional MFD accounts for the creep fraction of each fault when calculating the total seismic moment rate. This can be further reduced by applying a moment-rate reduction factor, which is currently hardcoded to 0 in the `getModelParameters.m` function. However, if a regional MFD input file is provided as a constraint, that file takes precedence over the MFD calculated using the b-value and fault moment rates.
 
 **Maximum shallow gap and maximum deep gap**
 
-Define the maximum allowable distance between subsections belonging to different fault sections for a connection to be considered admissible. The applicable threshold depends on the depth of the subsections.
-The transition between the shallow- and deep-gap thresholds is controlled by `z lim` (km).
-For example, if the maximum shallow gap is 5 km, the maximum deep gap is 10 km, and `z lim` is 7 km, the shallow-gap threshold applies to subsections shallower than 7 km, whereas the deep-gap threshold applies to subsections at greater depths.
+Define the maximum allowable distance between subsections belonging to different fault sections for a connection to be considered admissible. The applicable threshold depends on the depth of the subsections. The transition between the shallow- and deep-gap thresholds is controlled by `z lim` (km). The distance is the minimum edge-to-edge distance between the two subsections. By default it is computed horizontally (2D). Setting `s2sUse3D = true` in `getModelParameters.m` computes the full 3D distance instead, which also accounts for the vertical offset between the subsections and is therefore never smaller than the horizontal one.
+For example, if the maximum shallow gap is 5 km, the maximum deep gap is 10 km, and `z lim` is 7 km, the shallow-gap threshold applies to subsections shallower than 7 km, whereas the deep-gap threshold applies to subsections at greater depths. 
 
 **Maximum azimuth, rake, and dip differences**
 
 Define the maximum allowable differences in azimuth, rake, and dip between fault sections when determining fault clusters.
 These criteria control which fault sections are considered geometrically and kinematically compatible within the same fault system and can potentially participate in multi-fault ruptures.
 For example, if the maximum azimuth difference is set to 40°, two fault sections whose azimuth difference exceeds 40° cannot be directly connected under this clustering criterion. Consequently, a multi-fault rupture cannot connect those sections directly through that link.
+
+| Criterion | What it controls | Effect of increasing threshold | Range |
+|---|---|---|---|
+|Maximum gap|Distance between fault sections|Allows larger spatial gaps|0 km – user-defined|
+|Maximum azimuth change|Change in strike between sections|Allows larger changes in orientation|0° – 90°|
+|Maximum dip difference|Change in dip angle between fault sections|Allows greater differences in fault dip|0° - 90°|
+|Maximum rake difference|Difference in rupture mechanism|Allows increasingly different mechanisms|0° - 180°|
 
 **Maximum aspect ratio**
 
@@ -138,7 +138,7 @@ Load a `.txt` file containing the following fields:
 
 If this file is provided, it takes precedence over the regional MFD calculated internally from the regional b-value and the seismic moment rates of the faults.
 
-**Fault MFD**
+**Single Fault b-value**
 
 Load a `.txt` file containing:
 
@@ -189,7 +189,7 @@ Load a `.txt` file containing:
 | `EndFrac` | Ending fraction of the fault section affected by the historical rupture |
 | `LastEventYr` | Year of the most recent event |
 
-For example, a fault section with `StartFrac = 0` and `EndFrac = 1` is assumed to have ruptured over its entire length during the last event. If `LastEventYr = 1940`, the most recent event occurred in 1940. If this file is not uploaded the code will compute the time dependacy assuming that for each fault section the time elapsed interval and the historical open interval are unkown (following Field, 2015).
+For example, a fault section with `StartFrac = 0` and `EndFrac = 1` is assumed to have ruptured over its entire length during the last event. If `LastEventYr = 1940`, the most recent event occurred in 1940. If this file is not uploaded the code will compute the time dependacy assuming that for each fault section the time elapsed interval and the historical open interval are unkown (following Field, 2015). `StartFrac` and `EndFrac` are measured along the fault trace in the order in which the vertices are listed in the input file (0 = first vertex, 1 = last vertex). The code handles any internal reorientation automatically.
 
 Load a second `.txt` file containing:
 
@@ -213,7 +213,8 @@ Specifies the duration of the forecast window, in years, over which the Poissoni
 **Year for Computing Elapsed Time**
 
 Specifies the reference year used to calculate the elapsed time since the last earthquake and the open historical interval.
-For example, if LastEventYr = 1940 and the reference year is 2026, the elapsed time is:[2026-1940=86\text{ years}]
+For example, if LastEventYr = 1940 and the reference year is 2026, the elapsed time is:[2026-1940=86\text{ years}].
+If left empty, the current year from the system clock is used. For reproducible results, set it explicitly. The elapsed times are stored in the rupture catalogue, so changing this value requires regenerating the catalogue.
 
 ## 4. Simulated annealing settings
 
@@ -226,8 +227,8 @@ The appropriate weights depend on the objective of the analysis and the relative
 ### 4.2. Number of SA runs
 
 Specifies the number of independent simulated annealing runs.
-Because SA is a stochastic optimization algorithm, different runs can produce different rupture-rate solutions. A sufficiently large number of independent runs is recommended to characterize the variability among solutions; for example, more than 100 runs may be appropriate.
-To record a random seed for each run, open getmodelparameters.m and uncomment the following line (currently around line 141):
+Because SA is a stochastic optimization algorithm, different runs can produce different rupture-rate solutions. A sufficiently large number of independent runs is recommended to characterize the variability among solutions; for example, more than 20-50 runs may be appropriate.
+To record a random seed for each run, open `getmodelparameters.m` and uncomment the following line:
 
 params.seed = randi(100000);
 
@@ -236,7 +237,7 @@ This allows the generated seed to be recorded and used to reproduce a run, provi
 ### 4.3. Number of iterations
 
 Specifies the number of iterations performed by the simulated annealing algorithm.
-The required number depends on the size and complexity of the problem. As an initial guideline, approximately 2,000 iterations per candidate rupture can be considered. This is a starting point rather than a universal requirement, and convergence and solution variability should be assessed for the specific application.
+The required number depends on the size and complexity of the problem. As an initial guideline, approximately `2,000` iterations per candidate rupture can be considered. This is a starting point rather than a universal requirement, and convergence and solution variability should be assessed for the specific application.
 
 ## 5. Outputs and additional tools
 
@@ -261,8 +262,10 @@ To generate fault-specific MFD plots, export OpenQuake input files, or save addi
 # Contributors
 Alessandro Valentini - University of Vienna, Department of Geology
 
+Code review, debugging and performance optimization were carried out with the assistance of Claude (Anthropic). All code was reviewed, tested and validated by the author, who take full responsibility for its content.
+
 # Licensing and citation
-If you use this code, please cite our paper (...) and the Zenodo DOI (https://doi.org/10.5281/zenodo.23160969).
+If you use this code, please cite the paper (...) and the Zenodo DOI (https://doi.org/10.5281/zenodo.23160969).
 This project is licensed under the MIT License - see the LICENSE file for details.
 
 # Contact
