@@ -34,7 +34,8 @@ For each fault section, specify the following fields:
 | `lowerST` | Lower seismogenic depth | km |
 | `CreepFraction` | Fraction of the fault slip accommodated by creep, between 0 and 1 | — |
 
-Ensure that the `MainFaults_coords` folder contains one `.txt` file for each `FaultName`. Each file must contain the longitude and latitude coordinates, in decimal degrees, defining the fault's surface trace.
+Ensure that the `MainFaults_coords` folder contains one `.txt` file for each `FaultName`. Each file must contain two numeric columns (`lon lat`) defining the fault's surface trace in decimal degrees, with no header row and using a dot (`.`) as the decimal separator (avoiding comma decimal separators or swapped `lat lon` columns).
+
 In the GUI, enter the input filename in the **Input Faults File** field, without the `.txt` extension.
 
 ### 2.2. Parameters controlling rupture catalogue generation
