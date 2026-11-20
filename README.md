@@ -191,6 +191,12 @@ Load a `.txt` file containing:
 | `LastEventYr` | Year of the most recent event |
 
 For example, a fault section with `StartFrac = 0` and `EndFrac = 1` is assumed to have ruptured over its entire length during the last event. If `LastEventYr = 1940`, the most recent event occurred in 1940. If this file is not uploaded the code will compute the time dependacy assuming that for each fault section the time elapsed interval and the historical open interval are unkown (following Field, 2015). `StartFrac` and `EndFrac` are measured along the fault trace in the order in which the vertices are listed in the input file (0 = first vertex, 1 = last vertex). The code handles any internal reorientation automatically.
+If `StartFrac`–`EndFrac` intervals overlap for the same fault, only the most recent event (`LastEventYr`) should be entered—do not enter multiple overlapping rows for the same section (e.g., if one row covers `0.0–0.6` and another `0.4–1.0` on `0.4–0.6`, keep only the last event rather than overlapping intervals).
+Disjoint intervals are supported for long faults with partial paleoseismic coverage—for example, one row with `StartFrac = 0.0`, `EndFrac = 0.3` and a second row with `StartFrac = 0.7`, `EndFrac = 1.0`—leaving uncovered subsections (`0.3–0.7`) as `NaN`.
+
+| `FaultName` | `StartFrac` | `EndFrac` | `LastEventYr` |
+| Fault1 | 0.0 | 0.3 | 1900|
+| Fault1 | 0.7 | 1.0 | 1800|
 
 Load a second `.txt` file containing:
 
