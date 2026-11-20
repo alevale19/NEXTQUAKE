@@ -82,7 +82,11 @@ Defines the maximum allowable ratio between rupture length along strike (\(L\)) 
 L/W
 \]
 
-This parameter is used to filter out candidate ruptures whose aspect ratios exceed the specified threshold.
+This parameter is used to filter out candidate ruptures whose aspect ratios exceed the specified threshold. 
+
+For long faults—for example, L = 200 km and W = 15 km—the aspect ratio can become very high. If such a fault is represented as a single fault section, the full-fault rupture may be filtered out (as in historical/modern strike-slip examples such as San Francisco 1906, Denali 2002, or Kahramanmaraş 2023). In these cases, discretizing the fault into multiple fault sections allows adjacent subsections to rupture together and form the full-length rupture.
+
+The aspect-ratio filter applies only during the generation of elementary ruptures; therefore, multi-fault ruptures with L/W exceeding the threshold are not discarded by this filter.
 
 **Maximum Mw**
 
