@@ -195,6 +195,7 @@ If `StartFrac`–`EndFrac` intervals overlap for the same fault, only the most r
 Disjoint intervals are supported for long faults with partial paleoseismic coverage—for example, one row with `StartFrac = 0.0`, `EndFrac = 0.3` and a second row with `StartFrac = 0.7`, `EndFrac = 1.0`—leaving uncovered subsections (`0.3–0.7`) as `NaN`.
 
 | `FaultName` | `StartFrac` | `EndFrac` | `LastEventYr` |
+|---|---|---|---|
 | Fault1 | 0.0 | 0.3 | 1900|
 | Fault1 | 0.7 | 1.0 | 1800|
 
