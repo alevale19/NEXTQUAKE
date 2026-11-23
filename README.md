@@ -236,7 +236,22 @@ If left empty, the current year from the system clock is used. For reproducible 
 
 The first four fields define the weights assigned to the corresponding constraints relative to the geological slip-rate constraint.
 Weights can range from 0 to a sufficiently large value (e.g., (10^6)). A weight of 1 assigns the corresponding constraint a nominal weight equal to that of the slip-rate constraint. A weight of 0 effectively disables the corresponding penalty term.
-The appropriate weights depend on the objective of the analysis and the relative importance assigned to each constraint.
+The appropriate weights depend on the objective of the analysis and the relative importance assigned to each constraint. The total objective function combines distinct physical and statistical terms, each with its own units, scale, and magnitude:
+
+* **Slip rate (`energySR`)**: Normalized box-constraint violation squared ($\chi^2$-like, dimensionless). It acts as a primary constraint with an implicit weight of `1` and is not scaled by an adjustable weight parameter.
+* **Paleoseismic (`energyPaleo`)**: Normalized residual squared ($\chi^2$-like, dimensionless), scaled by `weightPaleo`. A residual of $1\sigma$ contributes $\sim 1$ per site.
+* **Regional MFD (`energyMFD`)**: Sum of squared differences in $\log_{10}$ incremental rate per bin, scaled by `weightMFD`. A one-decade discrepancy corresponds to a difference of $1$ ($\text{contribution} \approx 1$ before weighting).
+* **Local MFD (`energyLocalMFD`)**: Fault-level $b$-value energy term (`localBEnergy`), scaled by `weightLocalMFD`.
+* **Segmentation (`energySeg`)**: Linear sum of rates on forbidden/flagged ruptures (`rates(isBad)`), expressed in $\text{events/yr}$ (typically $\sim 10^{-6}\text{–}10^{-4}\text{ events/yr}$), scaled by `weightSeg`.
+* **L2 regularization (`energyL2`)**: Sum of squared rupture rates ($\sum r_i^2$), in $(\text{events/yr})^2$ (typically $\sim 10^{-12}\text{–}10^{-8}$ for individual rates), scaled by `weightL2`.
+
+Because these terms have different physical dimensions and numerical magnitudes, setting all GUI weights to the same value (for example, `1`) **does not** give each constraint equal practical influence on the inversion:
+
+* Suppose a slip-rate violation exceeds its bound by $1\sigma$ on a subsection: `energySR` increases by $\sim 1$.
+* Meanwhile, a forbidden rupture with a rate of $10^{-5}\text{ events/yr}$ contributes only $10^{-5}$ to `energySeg` when `weightSeg = 1`, and an L2 term with rates around $10^{-4}\text{ events/yr}$ contributes on the order of $10^{-8}$ per rupture when `weightL2 = 1`.
+* Conversely, a 10x ($\Delta\log_{10} = 1$) offset in an MFD bin contributes $\sim 1$ before `weightMFD`.
+
+As a result, weights should be tuned empirically relative to the actual scale of each term in your dataset rather than interpreted as normalized importance shares.
 
 ### 4.2. Number of SA runs
 
