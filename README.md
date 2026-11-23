@@ -230,6 +230,11 @@ Specifies the reference year used to calculate the elapsed time since the last e
 For example, if LastEventYr = 1940 and the reference year is 2026, the elapsed time is:[2026-1940=86\text{ years}].
 If left empty, the current year from the system clock is used. For reproducible results, set it explicitly. The elapsed times are stored in the rupture catalogue, so changing this value requires regenerating the catalogue.
 
+> **Warning on `Telaps`, `opHistInt` ($T_H$), and subsection recurrence (`subTmean`):**  
+> In `processAnnealingResults`, subsection mean recurrence (`subTmean = 1 / subEventRate_Poisson_base`) is computed from the total participation rate across **all** ruptures in the inversion catalog (unfiltered by magnitude), whereas `Telaps` typically reflects the time elapsed since the last historical, paleoseismic, or surface-rupturing event.  
+> - **Consistency requirement:** If moderate ruptures (e.g., $M_w\ 5.0\text{–}5.8$) dominate the catalog rate while `Telaps` refers only to larger "resetting" events, normalized elapsed time ($\eta_k = \text{Telaps} / \mu_{\text{sub}}$) will be inflated and BPT probabilities/gains overestimated.  
+> - **Handling incomplete historical records:** If your rupture catalog extends down to moderate magnitudes ($M_w\ 5.0\text{–}5.5$) where historical completeness is uncertain or fault attribution is ambiguous, **do not assign a `Telaps` from a larger historical event** to those subsections. Instead, leave `Telaps = NaN` on unconstrained subsections and use the Open History Interval (`opHistInt`, $T_H$) calibrated to the completeness period of the minimum catalog magnitude.
+
 ## 4. Simulated annealing settings
 
 ### 4.1. Constraint weights
