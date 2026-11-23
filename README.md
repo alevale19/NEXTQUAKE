@@ -154,7 +154,7 @@ Load a `.txt` file containing:
 | `FaultName` | Fault-section name |
 | `bValue` | Target Gutenberg–Richter b-value |
 
-The inversion penalizes departures of the resulting fault-specific magnitude distribution from the specified b-value.
+The inversion penalizes departures of the resulting fault-specific magnitude distribution from the specified b-value. In this version (v.1.2.1), the fault-level $b$-value constraint uses an Aki-type estimator aggregated over all ruptures intersecting each fault, with a `[0.1, 2]` cap and an active-rupture threshold (`nAct > 2`). Keep in mind two practical caveats when using it: (1) multi-fault ruptures whose magnitude is governed by neighboring faults can shift the estimated local $b$-value and bias the constraint, and (2) clamping/thresholding (`[0.1, 2]` cap and `nAct > 2`) can flatten gradients or allow local energy to drop/reset if active ruptures are turned off. In next versions, this is planned to be replaced by a direct comparison between a target per-fault MFD (built from each fault's target $b$-value) and the modeled fault MFD, analogous to the regional MFD.
 
 **Segmentation constraint**
 
