@@ -112,6 +112,7 @@ Load a `.txt` file containing the following fields:
 | `SRmax` | Maximum prescribed slip rate | mm/yr |
 
 Ensure that `FaultName` is consistent across all input files used throughout the workflow.
+The `[SRmin, SRmax]` interval is treated as a ~95% confidence range ($\pm 2\sigma$), deriving the standard deviation as `(SRmax - SRmin) / 3.92` (and likewise for optional point slip-rate bounds).
 
 ### 3.2. Optional constraints
 
@@ -131,6 +132,7 @@ Load a `.txt` file containing:
 | `MinRate` | Minimum paleoseismic event rate |
 
 The code uses the site coordinates to assign the paleoseismic event-rate constraint to the corresponding fault subsection.
+The `[MinRate, MaxRate]` interval is treated as a 95% confidence range ($\pm 2\sigma$), deriving the standard deviation as `(MaxRate - MinRate) / 3.92`.
 
 **Regional MFD**
 
